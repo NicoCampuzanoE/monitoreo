@@ -3,7 +3,7 @@ from datetime import datetime
 import gspread
 from google.oauth2 import service_account
 import re
-
+import pytz
 # ---------------------------
 # CONFIG GOOGLE SHEETS (SECRETS)
 # ---------------------------
@@ -205,6 +205,13 @@ with st.form(key=f"form_novedad_{st.session_state.form_key}"):
 
 if submitted:
 
+    # Leer desde session_state porque clear_on_submit ya limpió las variables locales
+    fk = st.session_state.form_key
+    categoria_val = st.session_state.get(
+        f"categoria_{fk}", "Seleccione una opción")
+    subcat_key = f"subcat_{categoria_val}_{fk}"
+    subcategoria_val = st.session_state.get(subcat_key, subcategoria)
+
     errores = []
 
     horario_input = horario.strip()
@@ -215,9 +222,9 @@ if submitted:
             "El horario debe tener formato HH:MM válido (ej: 08:30)")
     if comisaria == "Seleccione una opción":
         errores.append("Debe seleccionar una Comisaría")
-    if categoria == "Seleccione una opción":
+    if categoria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Categoría")
-    if categoria not in ["Seleccione una opción", "Otros"] and subcategoria == "Seleccione una opción":
+    if categoria_val not in ["Seleccione una opción", "Otros"] and subcategoria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Subcategoría")
     if camara_flag == "Seleccione una opción":
         errores.append("Debe indicar si se ve por cámara")
@@ -230,7 +237,9 @@ if submitted:
             hora_obj = datetime.strptime(horario_input, "%H:%M")
             horario_ampm = hora_obj.strftime("%I:%M:%S %p")
 
-            marca_temporal = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            tz_argentina = pytz.timezone("America/Argentina/Buenos_Aires")
+            marca_temporal = datetime.now(
+                tz_argentina).strftime("%d/%m/%Y %H:%M:%S")
 
             nueva_fila = {
                 "Marca temporal": marca_temporal,
@@ -238,9 +247,9 @@ if submitted:
                 "Horario": horario_ampm,
                 "¿Se ve por cámara?": camara_flag,
                 "Camara del Evento": numero_camara,
-                "Categoria": categoria,
+                "Categoria": categoria_val,
                 "Comisaria": comisaria,
-                "Subcategoria": subcategoria if subcategoria != "Seleccione una opción" else ""
+                "Subcategoria": subcategoria_val if subcategoria_val != "Seleccione una opción" else ""
             }
 
             sub_cols = {
@@ -256,7 +265,7 @@ if submitted:
                 "Subcategoria Incendios": ""
             }
 
-            col_sub = f"Subcategoria {categoria}"
+            col_sub = f"Subcategoria {categoria_val}"
             if col_sub in sub_cols:
                 sub_cols[col_sub] = nueva_fila["Subcategoria"]
 
