@@ -55,11 +55,13 @@ st.markdown("""
         #MainMenu { display: none !important; }
         [data-testid="stBottomBlockContainer"] { display: none !important; }
         [data-testid="stToolbar"] { display: none !important; }
-        div[class*="viewerBadge"] { display: none !important; }
-        div[class*="styles_viewerBadge"] { display: none !important; }
         #stDecoration { display: none !important; }
         .stDeployButton { display: none !important; }
-        [data-testid="stDecoration"] { display: none !important; }
+        /* Selectores específicos del badge */
+        [class*="_profileContainer"] { display: none !important; }
+        [class*="_viewerBadge"] { display: none !important; }
+        [class*="_container_gzau"] { display: none !important; }
+        [data-testid="appCreatorAvatar"] { display: none !important; }
     </style>
 """, unsafe_allow_html=True)
 
