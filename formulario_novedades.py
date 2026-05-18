@@ -48,6 +48,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+    <style>
+        header[data-testid="stHeader"] { display: none; }
+        footer { display: none; }
+        #MainMenu { display: none; }
+        /* Oculta el banner inferior "Created by / Hosted with Streamlit" */
+        [data-testid="stBottomBlockContainer"] { display: none; }
+    </style>
+""", unsafe_allow_html=True)
+
 # HEADER PROLIJO
 col1, col2, col3 = st.columns([2, 5, 2])
 
