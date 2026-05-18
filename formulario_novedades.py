@@ -10,20 +10,23 @@ import re
 
 google_secrets = dict(st.secrets["google"])
 
-# ✅ FIX DEFINITIVO PARA PRIVATE KEY
-private_key = google_secrets["private_key"]
+# Fix private key
+google_secrets["private_key"] = (
+    google_secrets["private_key"]
+    .replace("\\n", "\n")
+    .replace("\r\n", "\n")
+)
 
-# Si viene como texto con \n → lo convierte
-if "\\n" in private_key:
-    private_key = private_key.replace("\\n", "\n")
+# ✅ Credenciales con scopes explícitos
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# Si viene con \r\n (Windows) → normaliza
-private_key = private_key.replace("\r\n", "\n")
-
-google_secrets["private_key"] = private_key
-
-# ✅ credenciales
-creds = service_account.Credentials.from_service_account_info(google_secrets)
+creds = service_account.Credentials.from_service_account_info(
+    google_secrets,
+    scopes=SCOPES
+)
 client = gspread.authorize(creds)
 
 # ✅ ID del Sheet
@@ -127,7 +130,6 @@ with st.form("form_novedad", clear_on_submit=True):
 if submitted:
 
     horario = horario.strip()
-
     horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario)
 
     if not horario_valido:
