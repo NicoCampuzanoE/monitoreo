@@ -158,18 +158,7 @@ else:
     subcategoria = "Seleccione una opción"
 
 # ---------------------------
-# HORARIO — fuera del form para poder leerlo post-submit
-# ---------------------------
-
-horario = st.text_input(
-    "Horario (HH:MM)",
-    value="",
-    placeholder="Ej: 08:30",
-    key=f"horario_{fk}"
-)
-
-# ---------------------------
-# FORMULARIO
+# FORMULARIO — resto de los campos
 # ---------------------------
 
 with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
@@ -178,6 +167,11 @@ with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
 
     with col1:
         fecha = st.date_input("Fecha del evento", datetime.today())
+        horario = st.text_input(
+            "Horario (HH:MM)",
+            value="",
+            placeholder="Ej: 08:30"
+        )
 
     with col2:
         comisaria = st.selectbox(
