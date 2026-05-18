@@ -163,20 +163,10 @@ with st.form(key=f"form_novedad_{st.session_state.form_key}", clear_on_submit=Tr
         )
 
     # Subcategoría dinámica
-    if categoria != "Seleccione una opción" and categoria != "Otros":
-        subcategoria = st.selectbox(
-            "Subcategoría",
-            options=["Seleccione una opción"] + categorias[categoria],
-            index=0
-        )
-    elif categoria == "Otros":
-        subcategoria = "Otros"
+    if categoria != "Otros":
+        subcategoria = st.selectbox("Subcategoría", categorias[categoria])
     else:
-        subcategoria = st.selectbox(
-            "Subcategoría",
-            options=["Seleccione una opción"],
-            index=0
-        )
+        subcategoria = ""
 
     camara_flag = st.selectbox(
         "¿Se ve por cámara?",
