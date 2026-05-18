@@ -5,18 +5,28 @@ from google.oauth2 import service_account
 import re
 
 # ---------------------------
-# CONFIG GOOGLE SHEETS (SECRETS + FIX KEY)
+# CONFIG GOOGLE SHEETS (SECRETS)
 # ---------------------------
 
 google_secrets = dict(st.secrets["google"])
 
-# ✅ FIX DEL PROBLEMA DE CLAVE PRIVADA
-google_secrets["private_key"] = google_secrets["private_key"].replace("\\n", "\n")
+# ✅ FIX DEFINITIVO PARA PRIVATE KEY
+private_key = google_secrets["private_key"]
 
+# Si viene como texto con \n → lo convierte
+if "\\n" in private_key:
+    private_key = private_key.replace("\\n", "\n")
+
+# Si viene con \r\n (Windows) → normaliza
+private_key = private_key.replace("\r\n", "\n")
+
+google_secrets["private_key"] = private_key
+
+# ✅ credenciales
 creds = service_account.Credentials.from_service_account_info(google_secrets)
-
 client = gspread.authorize(creds)
 
+# ✅ ID del Sheet
 SHEET_ID = "1RFsEMgRx-nfnVxKLTGt_hzB_BmLspqJb9GIRusd8dKM"
 sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
