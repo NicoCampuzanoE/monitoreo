@@ -45,6 +45,22 @@ st.markdown("""
         [class*="_viewerBadge"] { display: none !important; }
         [class*="_imageMove"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
+
+        /* Unifica el recuadro visual */
+        div[data-testid="stVerticalBlock"] > div:has(
+            > div[data-testid="stVerticalBlock"]
+        ) {
+            background: transparent !important;
+        }
+
+        /* Contenedor unificado */
+        .bloque-form {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px 20px 8px 20px;
+            margin-bottom: 0px;
+            background: #1e1e2e;
+        }
     </style>
     <script>
         function ocultarBadge() {
@@ -133,17 +149,40 @@ if st.session_state.error_msg:
     st.session_state.error_msg = None
 
 # ---------------------------
-# CATEGORÍA Y SUBCATEGORÍA — fuera del form para que sean reactivas
+# BLOQUE VISUAL UNIFICADO
 # ---------------------------
 
 fk = st.session_state.form_key
 
-categoria = st.selectbox(
-    "Categoría",
-    options=["Seleccione una opción"] + list(categorias.keys()),
-    index=0,
-    key=f"categoria_{fk}"
-)
+# Div que envuelve todo visualmente
+st.markdown('<div class="bloque-form">', unsafe_allow_html=True)
+
+# --- Categoría y subcategoría (fuera del form, reactivos) ---
+col1, col2 = st.columns(2)
+
+with col1:
+    fecha = st.date_input("Fecha del evento",
+                          datetime.today(), key=f"fecha_{fk}")
+    horario = st.text_input(
+        "Horario (HH:MM)",
+        value="",
+        placeholder="Ej: 08:30",
+        key=f"horario_{fk}"
+    )
+
+with col2:
+    comisaria = st.selectbox(
+        "Comisaría",
+        options=["Seleccione una opción"] + comisarias,
+        index=0,
+        key=f"comisaria_{fk}"
+    )
+    categoria = st.selectbox(
+        "Categoría",
+        options=["Seleccione una opción"] + list(categorias.keys()),
+        index=0,
+        key=f"categoria_{fk}"
+    )
 
 if categoria not in ["Seleccione una opción", "Otros"]:
     subcategoria = st.selectbox(
@@ -157,36 +196,21 @@ elif categoria == "Otros":
 else:
     subcategoria = "Seleccione una opción"
 
-# ---------------------------
-# FORMULARIO — resto de los campos
-# ---------------------------
+camara_flag = st.selectbox(
+    "¿Se ve por cámara?",
+    options=["Seleccione una opción", "SI", "NO"],
+    index=0,
+    key=f"camara_{fk}"
+)
 
-with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
+numero_camara = ""
+if camara_flag == "SI":
+    numero_camara = st.text_input("Número de cámara", key=f"num_camara_{fk}")
 
-    col1, col2 = st.columns(2)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    with col1:
-        fecha = st.date_input("Fecha del evento", datetime.today())
-        horario = st.text_input(
-            "Horario (HH:MM)",
-            value="",
-            placeholder="Ej: 08:30"
-        )
-
-    with col2:
-        comisaria = st.selectbox(
-            "Comisaría",
-            options=["Seleccione una opción"] + comisarias,
-            index=0
-        )
-        camara_flag = st.selectbox(
-            "¿Se ve por cámara?",
-            options=["Seleccione una opción", "SI", "NO"],
-            index=0
-        )
-
-    numero_camara = st.text_input("Número de cámara (si aplica)", value="")
-
+# --- Form solo para el botón submit ---
+with st.form(key=f"form_novedad_{fk}"):
     submitted = st.form_submit_button(
         "💾 Guardar Novedad", use_container_width=True)
 
@@ -196,28 +220,34 @@ with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
 
 if submitted:
 
-    # Leer desde session_state porque clear_on_submit ya limpió las variables locales
     fk = st.session_state.form_key
     categoria_val = st.session_state.get(
         f"categoria_{fk}", "Seleccione una opción")
     subcat_key = f"subcat_{categoria_val}_{fk}"
-    subcategoria_val = st.session_state.get(subcat_key, subcategoria)
+    subcat_val = st.session_state.get(subcat_key, "Seleccione una opción")
+    if categoria_val == "Otros":
+        subcat_val = "Otros"
+
+    horario_input = st.session_state.get(f"horario_{fk}", "").strip()
+    fecha_val = st.session_state.get(f"fecha_{fk}", datetime.today())
+    comisaria_val = st.session_state.get(
+        f"comisaria_{fk}", "Seleccione una opción")
+    camara_val = st.session_state.get(f"camara_{fk}", "Seleccione una opción")
+    num_camara_val = st.session_state.get(f"num_camara_{fk}", "")
 
     errores = []
-
-    horario_input = horario.strip()
     horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario_input)
 
     if not horario_valido:
         errores.append(
             "El horario debe tener formato HH:MM válido (ej: 08:30)")
-    if comisaria == "Seleccione una opción":
+    if comisaria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Comisaría")
     if categoria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Categoría")
-    if categoria_val not in ["Seleccione una opción", "Otros"] and subcategoria_val == "Seleccione una opción":
+    if categoria_val not in ["Seleccione una opción", "Otros"] and subcat_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Subcategoría")
-    if camara_flag == "Seleccione una opción":
+    if camara_val == "Seleccione una opción":
         errores.append("Debe indicar si se ve por cámara")
 
     if errores:
@@ -225,22 +255,22 @@ if submitted:
         st.rerun()
     else:
         try:
-            hora_obj = datetime.strptime(horario_input, "%H:%M")
-            horario_ampm = hora_obj.strftime("%I:%M:%S %p")
-
             tz_argentina = pytz.timezone("America/Argentina/Buenos_Aires")
             marca_temporal = datetime.now(
                 tz_argentina).strftime("%d/%m/%Y %H:%M:%S")
+            fecha_str = fecha_val.strftime("%d/%m/%Y")
+            hora_obj = datetime.strptime(horario_input, "%H:%M")
+            horario_str = hora_obj.strftime("%H:%M:%S")
 
             nueva_fila = {
-                "Marca temporal": marca_temporal,
-                "Fecha evento": fecha.strftime("%d/%m/%Y"),
-                "Horario": horario_ampm,
-                "¿Se ve por cámara?": camara_flag,
-                "Camara del Evento": numero_camara,
-                "Categoria": categoria_val,
-                "Comisaria": comisaria,
-                "Subcategoria": subcategoria_val if subcategoria_val != "Seleccione una opción" else ""
+                "Marca temporal":     marca_temporal,
+                "Fecha evento":       fecha_str,
+                "Horario":            horario_str,
+                "¿Se ve por cámara?": camara_val,
+                "Camara del Evento":  num_camara_val,
+                "Categoria":          categoria_val,
+                "Comisaria":          comisaria_val,
+                "Subcategoria":       subcat_val if subcat_val != "Seleccione una opción" else ""
             }
 
             sub_cols = {
