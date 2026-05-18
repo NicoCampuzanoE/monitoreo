@@ -55,37 +55,39 @@ st.markdown("""
         #MainMenu { display: none !important; }
         [data-testid="stBottomBlockContainer"] { display: none !important; }
         [class*="_profileContainer"] { display: none !important; }
+        [class*="_profilePreview"] { display: none !important; }
         [class*="_viewerBadge"] { display: none !important; }
         [class*="_container_gzau"] { display: none !important; }
+        [class*="_imageMove"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
     </style>
 
     <script>
         function ocultarBadge() {
-            // Por data-testid
-            const avatar = document.querySelector('[data-testid="appCreatorAvatar"]');
-            if (avatar) {
-                let el = avatar;
-                // Sube 5 niveles para ocultar el contenedor raíz
-                for (let i = 0; i < 5; i++) {
-                    if (el.parentElement) el = el.parentElement;
+            document.querySelectorAll('[class*="_profilePreview"]').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            document.querySelectorAll('[class*="_profileContainer"]').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            document.querySelectorAll('[class*="_imageMove"]').forEach(el => {
+                let parent = el;
+                for (let i = 0; i < 6; i++) {
+                    if (parent.parentElement) parent = parent.parentElement;
                 }
-                el.style.display = 'none';
-            }
-
-            // Por href de streamlit.io/cloud
+                parent.style.setProperty('display', 'none', 'important');
+            });
             document.querySelectorAll('a[href*="streamlit.io"]').forEach(a => {
-                let el = a;
-                for (let i = 0; i < 5; i++) {
-                    if (el.parentElement) el = el.parentElement;
+                let parent = a;
+                for (let i = 0; i < 6; i++) {
+                    if (parent.parentElement) parent = parent.parentElement;
                 }
-                el.style.display = 'none';
+                parent.style.setProperty('display', 'none', 'important');
             });
         }
 
-        // Ejecuta al cargar y cada 500ms por si Streamlit re-renderiza
         ocultarBadge();
-        setInterval(ocultarBadge, 500);
+        setInterval(ocultarBadge, 300);
     </script>
 """, unsafe_allow_html=True)
 
