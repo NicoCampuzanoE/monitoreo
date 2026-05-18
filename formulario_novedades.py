@@ -3,7 +3,6 @@ from datetime import datetime
 import gspread
 from google.oauth2 import service_account
 import re
-import pytz
 
 # ---------------------------
 # CONFIG GOOGLE SHEETS (SECRETS)
@@ -133,60 +132,70 @@ if st.session_state.error_msg:
     st.session_state.error_msg = None
 
 # ---------------------------
-# CATEGORÍA Y SUBCATEGORÍA — fuera del form para que sean reactivas
+# WIDGETS FUERA DEL FORM (reactivos)
 # ---------------------------
 
-fk = st.session_state.form_key
+col1, col2 = st.columns(2)
 
-categoria = st.selectbox(
-    "Categoría",
-    options=["Seleccione una opción"] + list(categorias.keys()),
-    index=0,
-    key=f"categoria_{fk}"
-)
+with col1:
+    fecha = st.date_input("Fecha del evento", datetime.today(),
+                          key=f"fecha_{st.session_state.form_key}")
+    horario = st.text_input(
+        "Horario (HH:MM)",
+        value="",
+        placeholder="Ej: 08:30",
+        key=f"horario_{st.session_state.form_key}"
+    )
 
+with col2:
+    comisaria = st.selectbox(
+        "Comisaría",
+        options=["Seleccione una opción"] + comisarias,
+        index=0,
+        key=f"comisaria_{st.session_state.form_key}"
+    )
+    # Categoría fuera del form → al cambiar, recarga y actualiza subcategoría
+    categoria = st.selectbox(
+        "Categoría",
+        options=["Seleccione una opción"] + list(categorias.keys()),
+        index=0,
+        key=f"categoria_{st.session_state.form_key}"
+    )
+
+# Subcategoría dinámica — reacciona al cambio de categoría
 if categoria not in ["Seleccione una opción", "Otros"]:
     subcategoria = st.selectbox(
         "Subcategoría",
         options=["Seleccione una opción"] + categorias[categoria],
         index=0,
-        key=f"subcat_{categoria}_{fk}"
+        # key cambia con la categoría → resetea la selección
+        key=f"subcat_{categoria}_{st.session_state.form_key}"
     )
 elif categoria == "Otros":
     subcategoria = "Otros"
+    st.info("Categoría: Otros (sin subcategoría)")
 else:
     subcategoria = "Seleccione una opción"
 
+camara_flag = st.selectbox(
+    "¿Se ve por cámara?",
+    options=["Seleccione una opción", "SI", "NO"],
+    index=0,
+    key=f"camara_{st.session_state.form_key}"
+)
+
+numero_camara = ""
+if camara_flag == "SI":
+    numero_camara = st.text_input(
+        "Número de cámara",
+        key=f"num_camara_{st.session_state.form_key}"
+    )
+
 # ---------------------------
-# FORMULARIO — resto de los campos
+# FORM solo para el botón submit
 # ---------------------------
 
-with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        fecha = st.date_input("Fecha del evento", datetime.today())
-        horario = st.text_input(
-            "Horario (HH:MM)",
-            value="",
-            placeholder="Ej: 08:30"
-        )
-
-    with col2:
-        comisaria = st.selectbox(
-            "Comisaría",
-            options=["Seleccione una opción"] + comisarias,
-            index=0
-        )
-        camara_flag = st.selectbox(
-            "¿Se ve por cámara?",
-            options=["Seleccione una opción", "SI", "NO"],
-            index=0
-        )
-
-    numero_camara = st.text_input("Número de cámara (si aplica)", value="")
-
+with st.form(key=f"form_novedad_{st.session_state.form_key}"):
     submitted = st.form_submit_button(
         "💾 Guardar Novedad", use_container_width=True)
 
@@ -195,13 +204,6 @@ with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
 # ---------------------------
 
 if submitted:
-
-    # Leer desde session_state porque clear_on_submit ya limpió las variables locales
-    fk = st.session_state.form_key
-    categoria_val = st.session_state.get(
-        f"categoria_{fk}", "Seleccione una opción")
-    subcat_key = f"subcat_{categoria_val}_{fk}"
-    subcategoria_val = st.session_state.get(subcat_key, subcategoria)
 
     errores = []
 
@@ -213,9 +215,9 @@ if submitted:
             "El horario debe tener formato HH:MM válido (ej: 08:30)")
     if comisaria == "Seleccione una opción":
         errores.append("Debe seleccionar una Comisaría")
-    if categoria_val == "Seleccione una opción":
+    if categoria == "Seleccione una opción":
         errores.append("Debe seleccionar una Categoría")
-    if categoria_val not in ["Seleccione una opción", "Otros"] and subcategoria_val == "Seleccione una opción":
+    if categoria not in ["Seleccione una opción", "Otros"] and subcategoria == "Seleccione una opción":
         errores.append("Debe seleccionar una Subcategoría")
     if camara_flag == "Seleccione una opción":
         errores.append("Debe indicar si se ve por cámara")
@@ -228,9 +230,7 @@ if submitted:
             hora_obj = datetime.strptime(horario_input, "%H:%M")
             horario_ampm = hora_obj.strftime("%I:%M:%S %p")
 
-            tz_argentina = pytz.timezone("America/Argentina/Buenos_Aires")
-            marca_temporal = datetime.now(
-                tz_argentina).strftime("%d/%m/%Y %H:%M:%S")
+            marca_temporal = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
             nueva_fila = {
                 "Marca temporal": marca_temporal,
@@ -238,9 +238,9 @@ if submitted:
                 "Horario": horario_ampm,
                 "¿Se ve por cámara?": camara_flag,
                 "Camara del Evento": numero_camara,
-                "Categoria": categoria_val,
+                "Categoria": categoria,
                 "Comisaria": comisaria,
-                "Subcategoria": subcategoria_val if subcategoria_val != "Seleccione una opción" else ""
+                "Subcategoria": subcategoria if subcategoria != "Seleccione una opción" else ""
             }
 
             sub_cols = {
@@ -256,7 +256,7 @@ if submitted:
                 "Subcategoria Incendios": ""
             }
 
-            col_sub = f"Subcategoria {categoria_val}"
+            col_sub = f"Subcategoria {categoria}"
             if col_sub in sub_cols:
                 sub_cols[col_sub] = nueva_fila["Subcategoria"]
 
