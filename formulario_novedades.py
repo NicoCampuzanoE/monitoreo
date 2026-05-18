@@ -46,19 +46,11 @@ st.markdown("""
         [class*="_imageMove"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
 
-        /* Unifica el recuadro visual */
-        div[data-testid="stVerticalBlock"] > div:has(
-            > div[data-testid="stVerticalBlock"]
-        ) {
-            background: transparent !important;
-        }
-
-        /* Contenedor unificado */
         .bloque-form {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
             padding: 20px 20px 8px 20px;
-            margin-bottom: 0px;
+            margin-bottom: 16px;
             background: #1e1e2e;
         }
     </style>
@@ -149,15 +141,13 @@ if st.session_state.error_msg:
     st.session_state.error_msg = None
 
 # ---------------------------
-# BLOQUE VISUAL UNIFICADO
+# FORMULARIO
 # ---------------------------
 
 fk = st.session_state.form_key
 
-# Div que envuelve todo visualmente
 st.markdown('<div class="bloque-form">', unsafe_allow_html=True)
 
-# --- Categoría y subcategoría (fuera del form, reactivos) ---
 col1, col2 = st.columns(2)
 
 with col1:
@@ -203,16 +193,14 @@ camara_flag = st.selectbox(
     key=f"camara_{fk}"
 )
 
-numero_camara = ""
 if camara_flag == "SI":
     numero_camara = st.text_input("Número de cámara", key=f"num_camara_{fk}")
 
-st.markdown('</div>', unsafe_allow_html=True)
+# ✅ Botón dentro del bloque visual, sin st.form
+submitted = st.button("💾 Guardar Novedad",
+                      use_container_width=True, key=f"submit_{fk}")
 
-# --- Form solo para el botón submit ---
-with st.form(key=f"form_novedad_{fk}"):
-    submitted = st.form_submit_button(
-        "💾 Guardar Novedad", use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # VALIDACIÓN + GUARDADO
