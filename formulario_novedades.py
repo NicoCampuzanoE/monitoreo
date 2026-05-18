@@ -54,15 +54,39 @@ st.markdown("""
         footer { display: none !important; }
         #MainMenu { display: none !important; }
         [data-testid="stBottomBlockContainer"] { display: none !important; }
-        [data-testid="stToolbar"] { display: none !important; }
-        #stDecoration { display: none !important; }
-        .stDeployButton { display: none !important; }
-        /* Selectores específicos del badge */
         [class*="_profileContainer"] { display: none !important; }
         [class*="_viewerBadge"] { display: none !important; }
         [class*="_container_gzau"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
     </style>
+
+    <script>
+        function ocultarBadge() {
+            // Por data-testid
+            const avatar = document.querySelector('[data-testid="appCreatorAvatar"]');
+            if (avatar) {
+                let el = avatar;
+                // Sube 5 niveles para ocultar el contenedor raíz
+                for (let i = 0; i < 5; i++) {
+                    if (el.parentElement) el = el.parentElement;
+                }
+                el.style.display = 'none';
+            }
+
+            // Por href de streamlit.io/cloud
+            document.querySelectorAll('a[href*="streamlit.io"]').forEach(a => {
+                let el = a;
+                for (let i = 0; i < 5; i++) {
+                    if (el.parentElement) el = el.parentElement;
+                }
+                el.style.display = 'none';
+            });
+        }
+
+        // Ejecuta al cargar y cada 500ms por si Streamlit re-renderiza
+        ocultarBadge();
+        setInterval(ocultarBadge, 500);
+    </script>
 """, unsafe_allow_html=True)
 
 # HEADER PROLIJO
