@@ -1,27 +1,17 @@
 import streamlit as st
 from datetime import datetime
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import re
 from google.oauth2 import service_account
+import re
+
+# ---------------------------
+# CONFIG GOOGLE SHEETS (USANDO SECRETS)
+# ---------------------------
 
 creds = service_account.Credentials.from_service_account_info(
     st.secrets["google"]
 )
 
-client = gspread.authorize(creds)
-
-# ---------------------------
-# GOOGLE SHEETS
-# ---------------------------
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
-
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "monitoreo-496712-eafd88d76f46.json", scope
-)
 client = gspread.authorize(creds)
 
 SHEET_ID = "1RFsEMgRx-nfnVxKLTGt_hzB_BmLspqJb9GIRusd8dKM"
@@ -30,10 +20,11 @@ sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 # ---------------------------
 # CONFIG UI
 # ---------------------------
+
 st.set_page_config(page_title="Carga de Novedades", layout="centered")
 
-# ✅ HEADER PROLIJO
-col1, col2, col3 = st.columns([1, 6, 1])
+# HEADER
+col1, col2, col3 = st.columns([2, 5, 2])
 
 with col1:
     st.image("logo_izquierda.png", width=70)
@@ -56,13 +47,12 @@ with col2:
 with col3:
     st.image("logo_derecha.png", width=70)
 
-st.markdown("<hr style='margin-top:10px;'>", unsafe_allow_html=True)
-
 st.markdown("---")
 
 # ---------------------------
-# LISTAS
+# CONFIG DATOS
 # ---------------------------
+
 categorias = {
     "Robo": ["Moto", "Auto", "Via pública", "Finca", "Comercio", "Tentativa"],
     "Hurto": ["Moto", "Auto", "Via pública", "Finca", "Comercio", "Escuela", "Tentativa"],
@@ -85,6 +75,7 @@ comisarias = [
 # ---------------------------
 # FORMULARIO
 # ---------------------------
+
 with st.form("form_novedad", clear_on_submit=True):
 
     col1, col2 = st.columns(2)
@@ -102,7 +93,6 @@ with st.form("form_novedad", clear_on_submit=True):
         comisaria = st.selectbox("Comisaría", comisarias)
         categoria = st.selectbox("Categoría", list(categorias.keys()))
 
-    # Subcategoría dinámica
     if categoria != "Otros":
         subcategoria = st.selectbox("Subcategoría", categorias[categoria])
     else:
@@ -119,6 +109,7 @@ with st.form("form_novedad", clear_on_submit=True):
 # ---------------------------
 # VALIDACIÓN + GUARDADO
 # ---------------------------
+
 if submitted:
 
     horario = horario.strip()
