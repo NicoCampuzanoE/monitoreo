@@ -3,6 +3,13 @@ from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import re
+from google.oauth2 import service_account
+
+creds = service_account.Credentials.from_service_account_info(
+    st.secrets["google"]
+)
+
+client = gspread.authorize(creds)
 
 # ---------------------------
 # GOOGLE SHEETS
