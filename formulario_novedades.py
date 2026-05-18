@@ -196,19 +196,16 @@ with st.form(key=f"form_novedad_{fk}", clear_on_submit=True):
 
 if submitted:
 
-    # ✅ Leer desde session_state lo que clear_on_submit limpió
+    # Leer desde session_state porque clear_on_submit ya limpió las variables locales
     fk = st.session_state.form_key
     categoria_val = st.session_state.get(
         f"categoria_{fk}", "Seleccione una opción")
     subcat_key = f"subcat_{categoria_val}_{fk}"
-    subcat_val = st.session_state.get(subcat_key, "Seleccione una opción")
-    if categoria_val == "Otros":
-        subcat_val = "Otros"
-
-    horario_input = st.session_state.get(
-        f"horario_{fk}", "").strip()  # ✅ FIX horario
+    subcategoria_val = st.session_state.get(subcat_key, subcategoria)
 
     errores = []
+
+    horario_input = horario.strip()
     horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario_input)
 
     if not horario_valido:
@@ -218,7 +215,7 @@ if submitted:
         errores.append("Debe seleccionar una Comisaría")
     if categoria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Categoría")
-    if categoria_val not in ["Seleccione una opción", "Otros"] and subcat_val == "Seleccione una opción":
+    if categoria_val not in ["Seleccione una opción", "Otros"] and subcategoria_val == "Seleccione una opción":
         errores.append("Debe seleccionar una Subcategoría")
     if camara_flag == "Seleccione una opción":
         errores.append("Debe indicar si se ve por cámara")
@@ -228,28 +225,22 @@ if submitted:
         st.rerun()
     else:
         try:
-            tz_argentina = pytz.timezone("America/Argentina/Buenos_Aires")
+            hora_obj = datetime.strptime(horario_input, "%H:%M")
+            horario_ampm = hora_obj.strftime("%I:%M:%S %p")
 
-            # ✅ Marca temporal: string con fecha+hora (Google Sheets lo detecta como datetime)
+            tz_argentina = pytz.timezone("America/Argentina/Buenos_Aires")
             marca_temporal = datetime.now(
                 tz_argentina).strftime("%d/%m/%Y %H:%M:%S")
 
-            # ✅ Fecha evento: string formato DD/MM/YYYY → Sheets lo reconoce como fecha
-            fecha_str = fecha.strftime("%d/%m/%Y")
-
-            # ✅ Horario: string HH:MM:SS → Sheets lo reconoce como hora
-            hora_obj = datetime.strptime(horario_input, "%H:%M")
-            horario_str = hora_obj.strftime("%H:%M:%S")
-
             nueva_fila = {
-                "Marca temporal":    marca_temporal,
-                "Fecha evento":      fecha_str,
-                "Horario":           horario_str,
+                "Marca temporal": marca_temporal,
+                "Fecha evento": fecha.strftime("%d/%m/%Y"),
+                "Horario": horario_ampm,
                 "¿Se ve por cámara?": camara_flag,
                 "Camara del Evento": numero_camara,
-                "Categoria":         categoria_val,
-                "Comisaria":         comisaria,
-                "Subcategoria":      subcat_val if subcat_val != "Seleccione una opción" else ""
+                "Categoria": categoria_val,
+                "Comisaria": comisaria,
+                "Subcategoria": subcategoria_val if subcategoria_val != "Seleccione una opción" else ""
             }
 
             sub_cols = {
