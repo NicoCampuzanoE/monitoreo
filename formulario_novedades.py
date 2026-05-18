@@ -9,7 +9,6 @@ import re
 # ---------------------------
 
 google_secrets = dict(st.secrets["google"])
-
 google_secrets["private_key"] = (
     google_secrets["private_key"]
     .replace("\\n", "\n")
@@ -22,9 +21,7 @@ SCOPES = [
 ]
 
 creds = service_account.Credentials.from_service_account_info(
-    google_secrets,
-    scopes=SCOPES
-)
+    google_secrets, scopes=SCOPES)
 client = gspread.authorize(creds)
 
 SHEET_ID = "1RFsEMgRx-nfnVxKLTGt_hzB_BmLspqJb9GIRusd8dKM"
@@ -112,7 +109,7 @@ comisarias = [
 ]
 
 # ---------------------------
-# SESSION STATE PARA RESET
+# SESSION STATE
 # ---------------------------
 
 if "form_key" not in st.session_state:
@@ -135,50 +132,72 @@ if st.session_state.error_msg:
     st.session_state.error_msg = None
 
 # ---------------------------
-# FORMULARIO
+# WIDGETS FUERA DEL FORM (reactivos)
 # ---------------------------
 
-with st.form(key=f"form_novedad_{st.session_state.form_key}", clear_on_submit=True):
+col1, col2 = st.columns(2)
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        fecha = st.date_input("Fecha del evento", datetime.today())
-        horario = st.text_input(
-            "Horario (HH:MM)",
-            value="",
-            placeholder="Ej: 08:30"
-        )
-
-    with col2:
-        comisaria = st.selectbox(
-            "Comisaría",
-            options=["Seleccione una opción"] + comisarias,
-            index=0
-        )
-        categoria = st.selectbox(
-            "Categoría",
-            options=["Seleccione una opción"] + list(categorias.keys()),
-            index=0
-        )
-
-    # Subcategoría dinámica
-    if categoria != "Otros":
-        subcategoria = st.selectbox("Subcategoría", categorias[categoria])
-    else:
-        subcategoria = ""
-
-    camara_flag = st.selectbox(
-        "¿Se ve por cámara?",
-        options=["Seleccione una opción", "SI", "NO"],
-        index=0
+with col1:
+    fecha = st.date_input("Fecha del evento", datetime.today(),
+                          key=f"fecha_{st.session_state.form_key}")
+    horario = st.text_input(
+        "Horario (HH:MM)",
+        value="",
+        placeholder="Ej: 08:30",
+        key=f"horario_{st.session_state.form_key}"
     )
 
-    numero_camara = ""
-    if camara_flag == "SI":
-        numero_camara = st.text_input("Número de cámara")
+with col2:
+    comisaria = st.selectbox(
+        "Comisaría",
+        options=["Seleccione una opción"] + comisarias,
+        index=0,
+        key=f"comisaria_{st.session_state.form_key}"
+    )
+    # Categoría fuera del form → al cambiar, recarga y actualiza subcategoría
+    categoria = st.selectbox(
+        "Categoría",
+        options=["Seleccione una opción"] + list(categorias.keys()),
+        index=0,
+        key=f"categoria_{st.session_state.form_key}"
+    )
 
-    submitted = st.form_submit_button("Guardar Novedad")
+# Subcategoría dinámica — reacciona al cambio de categoría
+if categoria not in ["Seleccione una opción", "Otros"]:
+    subcategoria = st.selectbox(
+        "Subcategoría",
+        options=["Seleccione una opción"] + categorias[categoria],
+        index=0,
+        # key cambia con la categoría → resetea la selección
+        key=f"subcat_{categoria}_{st.session_state.form_key}"
+    )
+elif categoria == "Otros":
+    subcategoria = "Otros"
+    st.info("Categoría: Otros (sin subcategoría)")
+else:
+    subcategoria = "Seleccione una opción"
+
+camara_flag = st.selectbox(
+    "¿Se ve por cámara?",
+    options=["Seleccione una opción", "SI", "NO"],
+    index=0,
+    key=f"camara_{st.session_state.form_key}"
+)
+
+numero_camara = ""
+if camara_flag == "SI":
+    numero_camara = st.text_input(
+        "Número de cámara",
+        key=f"num_camara_{st.session_state.form_key}"
+    )
+
+# ---------------------------
+# FORM solo para el botón submit
+# ---------------------------
+
+with st.form(key=f"form_novedad_{st.session_state.form_key}"):
+    submitted = st.form_submit_button(
+        "💾 Guardar Novedad", use_container_width=True)
 
 # ---------------------------
 # VALIDACIÓN + GUARDADO
@@ -186,7 +205,6 @@ with st.form(key=f"form_novedad_{st.session_state.form_key}", clear_on_submit=Tr
 
 if submitted:
 
-    # Validaciones
     errores = []
 
     horario_input = horario.strip()
@@ -209,9 +227,7 @@ if submitted:
         st.rerun()
     else:
         try:
-            # Convertir horario a formato 12hs AM/PM
             hora_obj = datetime.strptime(horario_input, "%H:%M")
-            # ej: 08:30:00 a. m.
             horario_ampm = hora_obj.strftime("%I:%M:%S %p")
 
             marca_temporal = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
