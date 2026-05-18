@@ -50,11 +50,16 @@ st.markdown("""
 
 st.markdown("""
     <style>
-        header[data-testid="stHeader"] { display: none; }
-        footer { display: none; }
-        #MainMenu { display: none; }
-        /* Oculta el banner inferior "Created by / Hosted with Streamlit" */
-        [data-testid="stBottomBlockContainer"] { display: none; }
+        header[data-testid="stHeader"] { display: none !important; }
+        footer { display: none !important; }
+        #MainMenu { display: none !important; }
+        [data-testid="stBottomBlockContainer"] { display: none !important; }
+        [data-testid="stToolbar"] { display: none !important; }
+        div[class*="viewerBadge"] { display: none !important; }
+        div[class*="styles_viewerBadge"] { display: none !important; }
+        #stDecoration { display: none !important; }
+        .stDeployButton { display: none !important; }
+        [data-testid="stDecoration"] { display: none !important; }
     </style>
 """, unsafe_allow_html=True)
 
