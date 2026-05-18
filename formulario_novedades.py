@@ -5,12 +5,15 @@ from google.oauth2 import service_account
 import re
 
 # ---------------------------
-# CONFIG GOOGLE SHEETS (USANDO SECRETS)
+# CONFIG GOOGLE SHEETS (SECRETS + FIX KEY)
 # ---------------------------
 
-creds = service_account.Credentials.from_service_account_info(
-    st.secrets["google"]
-)
+google_secrets = dict(st.secrets["google"])
+
+# ✅ FIX DEL PROBLEMA DE CLAVE PRIVADA
+google_secrets["private_key"] = google_secrets["private_key"].replace("\\n", "\n")
+
+creds = service_account.Credentials.from_service_account_info(google_secrets)
 
 client = gspread.authorize(creds)
 
@@ -23,7 +26,7 @@ sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
 st.set_page_config(page_title="Carga de Novedades", layout="centered")
 
-# HEADER
+# HEADER PROLIJO
 col1, col2, col3 = st.columns([2, 5, 2])
 
 with col1:
@@ -93,6 +96,7 @@ with st.form("form_novedad", clear_on_submit=True):
         comisaria = st.selectbox("Comisaría", comisarias)
         categoria = st.selectbox("Categoría", list(categorias.keys()))
 
+    # Subcategoría dinámica
     if categoria != "Otros":
         subcategoria = st.selectbox("Subcategoría", categorias[categoria])
     else:
