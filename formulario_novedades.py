@@ -10,12 +10,20 @@ import re
 
 google_secrets = dict(st.secrets["google"])
 
+<<<<<<< HEAD
+=======
+# Fix private key
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
 google_secrets["private_key"] = (
     google_secrets["private_key"]
     .replace("\\n", "\n")
     .replace("\r\n", "\n")
 )
 
+<<<<<<< HEAD
+=======
+# ✅ Credenciales con scopes explícitos
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -36,6 +44,18 @@ sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
 st.set_page_config(page_title="Carga de Novedades", layout="centered")
 
+<<<<<<< HEAD
+=======
+# Ocultar elementos de Streamlit
+st.markdown("""
+    <style>
+        header[data-testid="stHeader"] { display: none; }
+        footer { display: none; }
+        #MainMenu { display: none; }
+    </style>
+""", unsafe_allow_html=True)
+
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
 st.markdown("""
     <style>
         header[data-testid="stHeader"] { display: none !important; }
@@ -45,14 +65,35 @@ st.markdown("""
         [class*="_profileContainer"] { display: none !important; }
         [class*="_profilePreview"] { display: none !important; }
         [class*="_viewerBadge"] { display: none !important; }
+<<<<<<< HEAD
         [class*="_imageMove"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
     </style>
+=======
+        [class*="_container_gzau"] { display: none !important; }
+        [class*="_imageMove"] { display: none !important; }
+        [data-testid="appCreatorAvatar"] { display: none !important; }
+    </style>
+
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
     <script>
         function ocultarBadge() {
             document.querySelectorAll('[class*="_profilePreview"]').forEach(el => {
                 el.style.setProperty('display', 'none', 'important');
             });
+<<<<<<< HEAD
+=======
+            document.querySelectorAll('[class*="_profileContainer"]').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            document.querySelectorAll('[class*="_imageMove"]').forEach(el => {
+                let parent = el;
+                for (let i = 0; i < 6; i++) {
+                    if (parent.parentElement) parent = parent.parentElement;
+                }
+                parent.style.setProperty('display', 'none', 'important');
+            });
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
             document.querySelectorAll('a[href*="streamlit.io"]').forEach(a => {
                 let parent = a;
                 for (let i = 0; i < 6; i++) {
@@ -61,10 +102,20 @@ st.markdown("""
                 parent.style.setProperty('display', 'none', 'important');
             });
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
         ocultarBadge();
         setInterval(ocultarBadge, 300);
     </script>
 """, unsafe_allow_html=True)
+<<<<<<< HEAD
+=======
+
+# HEADER PROLIJO
+col1, col2, col3 = st.columns([2, 5, 2])
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
 
 # ---------------------------
 # HEADER
@@ -196,11 +247,16 @@ with st.form(key=f"form_novedad_{st.session_state.form_key}", clear_on_submit=Tr
 
 if submitted:
 
+<<<<<<< HEAD
     # Validaciones
     errores = []
 
     horario_input = horario.strip()
     horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario_input)
+=======
+    horario = horario.strip()
+    horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario)
+>>>>>>> d85aec31f0152d07d1637e349f2e7f142fb3f755
 
     if not horario_valido:
         errores.append(
