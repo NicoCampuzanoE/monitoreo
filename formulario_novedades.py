@@ -39,6 +39,15 @@ sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
 st.set_page_config(page_title="Carga de Novedades", layout="centered")
 
+# Ocultar elementos de Streamlit
+st.markdown("""
+    <style>
+        header[data-testid="stHeader"] { display: none; }
+        footer { display: none; }
+        #MainMenu { display: none; }
+    </style>
+""", unsafe_allow_html=True)
+
 # HEADER PROLIJO
 col1, col2, col3 = st.columns([2, 5, 2])
 
