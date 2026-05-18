@@ -10,23 +10,23 @@ import re
 
 google_secrets = dict(st.secrets["google"])
 
-# ✅ FIX DEFINITIVO PARA PRIVATE KEY
-private_key = google_secrets["private_key"]
+google_secrets["private_key"] = (
+    google_secrets["private_key"]
+    .replace("\\n", "\n")
+    .replace("\r\n", "\n")
+)
 
-# Si viene como texto con \n → lo convierte
-if "\\n" in private_key:
-    private_key = private_key.replace("\\n", "\n")
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# Si viene con \r\n (Windows) → normaliza
-private_key = private_key.replace("\r\n", "\n")
-
-google_secrets["private_key"] = private_key
-
-# ✅ credenciales
-creds = service_account.Credentials.from_service_account_info(google_secrets)
+creds = service_account.Credentials.from_service_account_info(
+    google_secrets,
+    scopes=SCOPES
+)
 client = gspread.authorize(creds)
 
-# ✅ ID del Sheet
 SHEET_ID = "1RFsEMgRx-nfnVxKLTGt_hzB_BmLspqJb9GIRusd8dKM"
 sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
@@ -36,29 +36,55 @@ sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
 
 st.set_page_config(page_title="Carga de Novedades", layout="centered")
 
-# HEADER PROLIJO
-col1, col2, col3 = st.columns([2, 5, 2])
+st.markdown("""
+    <style>
+        header[data-testid="stHeader"] { display: none !important; }
+        footer { display: none !important; }
+        #MainMenu { display: none !important; }
+        [data-testid="stBottomBlockContainer"] { display: none !important; }
+        [class*="_profileContainer"] { display: none !important; }
+        [class*="_profilePreview"] { display: none !important; }
+        [class*="_viewerBadge"] { display: none !important; }
+        [class*="_imageMove"] { display: none !important; }
+        [data-testid="appCreatorAvatar"] { display: none !important; }
+    </style>
+    <script>
+        function ocultarBadge() {
+            document.querySelectorAll('[class*="_profilePreview"]').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            document.querySelectorAll('a[href*="streamlit.io"]').forEach(a => {
+                let parent = a;
+                for (let i = 0; i < 6; i++) {
+                    if (parent.parentElement) parent = parent.parentElement;
+                }
+                parent.style.setProperty('display', 'none', 'important');
+            });
+        }
+        ocultarBadge();
+        setInterval(ocultarBadge, 300);
+    </script>
+""", unsafe_allow_html=True)
 
-with col1:
+# ---------------------------
+# HEADER
+# ---------------------------
+
+col_logo, col_titulo = st.columns([1, 6])
+
+with col_logo:
     st.image("logo_izquierda.png", width=70)
 
-with col2:
+with col_titulo:
     st.markdown(
         """
-        <div style="text-align:center;">
-            <h1 style="color:#0d9488; margin-bottom:5px;">
-                Carga de Novedades
-            </h1>
-            <p style="color:gray; margin-top:0;">
-                Sistema de monitoreo
-            </p>
+        <div style="text-align:center; padding-top:10px;">
+            <h1 style="color:#0d9488; margin-bottom:5px;">Carga de Novedades</h1>
+            <p style="color:gray; margin-top:0;">Sistema de monitoreo</p>
         </div>
         """,
         unsafe_allow_html=True
     )
-
-with col3:
-    st.image("logo_derecha.png", width=70)
 
 st.markdown("---")
 
@@ -86,33 +112,77 @@ comisarias = [
 ]
 
 # ---------------------------
+# SESSION STATE PARA RESET
+# ---------------------------
+
+if "form_key" not in st.session_state:
+    st.session_state.form_key = 0
+if "success_msg" not in st.session_state:
+    st.session_state.success_msg = None
+if "error_msg" not in st.session_state:
+    st.session_state.error_msg = None
+
+# ---------------------------
+# MENSAJES DE ESTADO
+# ---------------------------
+
+if st.session_state.success_msg:
+    st.success(st.session_state.success_msg)
+    st.session_state.success_msg = None
+
+if st.session_state.error_msg:
+    st.error(st.session_state.error_msg)
+    st.session_state.error_msg = None
+
+# ---------------------------
 # FORMULARIO
 # ---------------------------
 
-with st.form("form_novedad", clear_on_submit=True):
+with st.form(key=f"form_novedad_{st.session_state.form_key}", clear_on_submit=True):
 
     col1, col2 = st.columns(2)
 
     with col1:
         fecha = st.date_input("Fecha del evento", datetime.today())
-
         horario = st.text_input(
             "Horario (HH:MM)",
-            datetime.now().strftime("%H:%M"),
+            value="",
             placeholder="Ej: 08:30"
         )
 
     with col2:
-        comisaria = st.selectbox("Comisaría", comisarias)
-        categoria = st.selectbox("Categoría", list(categorias.keys()))
+        comisaria = st.selectbox(
+            "Comisaría",
+            options=["Seleccione una opción"] + comisarias,
+            index=0
+        )
+        categoria = st.selectbox(
+            "Categoría",
+            options=["Seleccione una opción"] + list(categorias.keys()),
+            index=0
+        )
 
     # Subcategoría dinámica
-    if categoria != "Otros":
-        subcategoria = st.selectbox("Subcategoría", categorias[categoria])
+    if categoria != "Seleccione una opción" and categoria != "Otros":
+        subcategoria = st.selectbox(
+            "Subcategoría",
+            options=["Seleccione una opción"] + categorias[categoria],
+            index=0
+        )
+    elif categoria == "Otros":
+        subcategoria = "Otros"
     else:
-        subcategoria = ""
+        subcategoria = st.selectbox(
+            "Subcategoría",
+            options=["Seleccione una opción"],
+            index=0
+        )
 
-    camara_flag = st.selectbox("¿Se ve por cámara?", ["SI", "NO"])
+    camara_flag = st.selectbox(
+        "¿Se ve por cámara?",
+        options=["Seleccione una opción", "SI", "NO"],
+        index=0
+    )
 
     numero_camara = ""
     if camara_flag == "SI":
@@ -126,51 +196,75 @@ with st.form("form_novedad", clear_on_submit=True):
 
 if submitted:
 
-    horario = horario.strip()
+    # Validaciones
+    errores = []
 
-    horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario)
+    horario_input = horario.strip()
+    horario_valido = re.match(r"^([01]\d|2[0-3]):([0-5]\d)$", horario_input)
 
     if not horario_valido:
-        st.error("❌ El horario debe tener formato HH:MM válido (ej: 08:30)")
-    else:
+        errores.append(
+            "El horario debe tener formato HH:MM válido (ej: 08:30)")
+    if comisaria == "Seleccione una opción":
+        errores.append("Debe seleccionar una Comisaría")
+    if categoria == "Seleccione una opción":
+        errores.append("Debe seleccionar una Categoría")
+    if categoria not in ["Seleccione una opción", "Otros"] and subcategoria == "Seleccione una opción":
+        errores.append("Debe seleccionar una Subcategoría")
+    if camara_flag == "Seleccione una opción":
+        errores.append("Debe indicar si se ve por cámara")
 
-        marca_temporal = datetime.now()
-
-        nueva_fila = {
-            "Marca temporal": marca_temporal.strftime("%d/%m/%Y %H:%M:%S"),
-            "Fecha evento": fecha.strftime("%d/%m/%Y"),
-            "Horario": horario,
-            "¿Se ve por cámara?": camara_flag,
-            "Camara del Evento": numero_camara,
-            "Categoria": categoria,
-            "Comisaria": comisaria,
-            "Subcategoria": subcategoria
-        }
-
-        sub_cols = {
-            "Subcategoria Robo": "",
-            "Subcategoria Hurto": "",
-            "Subcategoria Accidente de tránsito": "",
-            "Subcategoria Conflicto": "",
-            "Subcategoria Violencia": "",
-            "Subcategoria Heridos": "",
-            "Subcategoria Persecución": "",
-            "Subcategoria Obito": "",
-            "Subcategoria Otros": "",
-            "Subcategoria Incendios": ""
-        }
-
-        col_sub = f"Subcategoria {categoria}"
-        if col_sub in sub_cols:
-            sub_cols[col_sub] = subcategoria
-
-        nueva_fila.update(sub_cols)
-
-        columnas = sheet.row_values(1)
-        fila_final = [nueva_fila.get(col, "") for col in columnas]
-
-        sheet.append_row(fila_final)
-
-        st.success("✅ Novedad cargada correctamente")
-
+    if errores:
+        st.session_state.error_msg = "❌ " + " | ".join(errores)
         st.rerun()
+    else:
+        try:
+            # Convertir horario a formato 12hs AM/PM
+            hora_obj = datetime.strptime(horario_input, "%H:%M")
+            # ej: 08:30:00 a. m.
+            horario_ampm = hora_obj.strftime("%I:%M:%S %p")
+
+            marca_temporal = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+            nueva_fila = {
+                "Marca temporal": marca_temporal,
+                "Fecha evento": fecha.strftime("%d/%m/%Y"),
+                "Horario": horario_ampm,
+                "¿Se ve por cámara?": camara_flag,
+                "Camara del Evento": numero_camara,
+                "Categoria": categoria,
+                "Comisaria": comisaria,
+                "Subcategoria": subcategoria if subcategoria != "Seleccione una opción" else ""
+            }
+
+            sub_cols = {
+                "Subcategoria Robo": "",
+                "Subcategoria Hurto": "",
+                "Subcategoria Accidente de tránsito": "",
+                "Subcategoria Conflicto": "",
+                "Subcategoria Violencia": "",
+                "Subcategoria Heridos": "",
+                "Subcategoria Persecución": "",
+                "Subcategoria Obito": "",
+                "Subcategoria Otros": "",
+                "Subcategoria Incendios": ""
+            }
+
+            col_sub = f"Subcategoria {categoria}"
+            if col_sub in sub_cols:
+                sub_cols[col_sub] = nueva_fila["Subcategoria"]
+
+            nueva_fila.update(sub_cols)
+
+            columnas = sheet.row_values(1)
+            fila_final = [nueva_fila.get(col, "") for col in columnas]
+
+            sheet.append_row(fila_final)
+
+            st.session_state.success_msg = "✅ Novedad cargada correctamente"
+            st.session_state.form_key += 1
+            st.rerun()
+
+        except Exception as e:
+            st.session_state.error_msg = f"❌ Error al guardar: {str(e)}"
+            st.rerun()
