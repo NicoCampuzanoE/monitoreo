@@ -45,14 +45,6 @@ st.markdown("""
         [class*="_viewerBadge"] { display: none !important; }
         [class*="_imageMove"] { display: none !important; }
         [data-testid="appCreatorAvatar"] { display: none !important; }
-
-        .bloque-form {
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 20px 20px 8px 20px;
-            margin-bottom: 16px;
-            background: #1e1e2e;
-        }
     </style>
     <script>
         function ocultarBadge() {
@@ -146,61 +138,61 @@ if st.session_state.error_msg:
 
 fk = st.session_state.form_key
 
-st.markdown('<div class="bloque-form">', unsafe_allow_html=True)
+# ✅ st.container(border=True) reemplaza el div manual — sin recuadros fantasma
+with st.container(border=True):
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    fecha = st.date_input("Fecha del evento",
-                          datetime.today(), key=f"fecha_{fk}")
-    horario = st.text_input(
-        "Horario (HH:MM)",
-        value="",
-        placeholder="Ej: 08:30",
-        key=f"horario_{fk}"
-    )
+    with col1:
+        fecha = st.date_input("Fecha del evento",
+                              datetime.today(), key=f"fecha_{fk}")
+        horario = st.text_input(
+            "Horario (HH:MM)",
+            value="",
+            placeholder="Ej: 08:30",
+            key=f"horario_{fk}"
+        )
 
-with col2:
-    comisaria = st.selectbox(
-        "Comisaría",
-        options=["Seleccione una opción"] + comisarias,
+    with col2:
+        comisaria = st.selectbox(
+            "Comisaría",
+            options=["Seleccione una opción"] + comisarias,
+            index=0,
+            key=f"comisaria_{fk}"
+        )
+        categoria = st.selectbox(
+            "Categoría",
+            options=["Seleccione una opción"] + list(categorias.keys()),
+            index=0,
+            key=f"categoria_{fk}"
+        )
+
+    if categoria not in ["Seleccione una opción", "Otros"]:
+        subcategoria = st.selectbox(
+            "Subcategoría",
+            options=["Seleccione una opción"] + categorias[categoria],
+            index=0,
+            key=f"subcat_{categoria}_{fk}"
+        )
+    elif categoria == "Otros":
+        subcategoria = "Otros"
+    else:
+        subcategoria = "Seleccione una opción"
+
+    camara_flag = st.selectbox(
+        "¿Se ve por cámara?",
+        options=["Seleccione una opción", "SI", "NO"],
         index=0,
-        key=f"comisaria_{fk}"
-    )
-    categoria = st.selectbox(
-        "Categoría",
-        options=["Seleccione una opción"] + list(categorias.keys()),
-        index=0,
-        key=f"categoria_{fk}"
+        key=f"camara_{fk}"
     )
 
-if categoria not in ["Seleccione una opción", "Otros"]:
-    subcategoria = st.selectbox(
-        "Subcategoría",
-        options=["Seleccione una opción"] + categorias[categoria],
-        index=0,
-        key=f"subcat_{categoria}_{fk}"
-    )
-elif categoria == "Otros":
-    subcategoria = "Otros"
-else:
-    subcategoria = "Seleccione una opción"
+    if camara_flag == "SI":
+        numero_camara = st.text_input(
+            "Número de cámara", key=f"num_camara_{fk}")
 
-camara_flag = st.selectbox(
-    "¿Se ve por cámara?",
-    options=["Seleccione una opción", "SI", "NO"],
-    index=0,
-    key=f"camara_{fk}"
-)
-
-if camara_flag == "SI":
-    numero_camara = st.text_input("Número de cámara", key=f"num_camara_{fk}")
-
-# ✅ Botón dentro del bloque visual, sin st.form
+# Botón fuera del container, sin recuadro
 submitted = st.button("💾 Guardar Novedad",
                       use_container_width=True, key=f"submit_{fk}")
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # VALIDACIÓN + GUARDADO
